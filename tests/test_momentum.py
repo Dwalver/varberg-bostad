@@ -91,3 +91,20 @@ def test_fortinova_keeps_only_varberg_municipality_and_uses_district():
     assert listings[0].rooms == 2.0
     assert listings[0].url == "https://minasidor.fortinova.se/market/residential/T"
     assert FN + "v2/market/objects/G" not in http.calls
+
+
+def test_one_broken_detail_does_not_hide_other_listings():
+    page = {
+        "count": 2,
+        "items": [
+            {"id": "GONE", "queueType": "residential", "location": {}},
+            {"id": "B", "queueType": "residential", "location": {}},
+        ],
+    }
+    http = FakeHttp({
+        VB + "v2/market/objects?offset=0&limit=500": page,
+        # GONE has no detail route -> FakeHttp raises like a 404
+        VB + "v2/market/objects/B": _detail("B", ["Håsten"], "VARBERG", "4 rum och kök", 9000),
+    })
+
+    assert [l.id for l in varbergs_bostad.fetch(http)] == ["B"]

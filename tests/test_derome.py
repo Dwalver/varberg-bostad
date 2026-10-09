@@ -65,3 +65,22 @@ def test_derome_skips_broken_detail():
 def test_derome_empty_list_is_not_an_error():
     http = FakeHttp({BASE + "/lediga-lagenheter": "<ul class='product-list'></ul>"})
     assert derome.fetch(http) == []
+
+
+def test_derome_raises_when_list_layout_changes():
+    import pytest
+    http = FakeHttp({BASE + "/lediga-lagenheter": "<html><div>ny design</div></html>"})
+    with pytest.raises(RuntimeError, match="product-list"):
+        derome.fetch(http)
+
+
+def test_derome_raises_when_no_detail_page_parses():
+    import pytest
+    http = FakeHttp({
+        BASE + "/lediga-lagenheter": LIST_HTML,
+        BASE + "/lediga-lagenheter/lagenhet/5023-118-5": "<html>ny design</html>",
+        BASE + "/lediga-lagenheter/lagenhet/3640-107-1": "<html>ny design</html>",
+        BASE + "/lediga-lagenheter/lagenhet/9999-1-1": "<html>ny design</html>",
+    })
+    with pytest.raises(RuntimeError, match="Adress"):
+        derome.fetch(http)

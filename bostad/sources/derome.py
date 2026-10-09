@@ -15,6 +15,8 @@ log = logging.getLogger(__name__)
 
 def _listing_paths(html: str) -> list[str]:
     soup = BeautifulSoup(html, "html.parser")
+    if not soup.select_one(".product-list"):
+        raise RuntimeError("Derome: hittar ingen product-list på sidan – har sidan bytt utseende?")
     paths = []
     for item in soup.select("li.product-list__item[data-marker]"):
         match = re.match(r"url:([^|]+)", unquote(item["data-marker"]))
@@ -34,8 +36,6 @@ def _facts(html: str) -> dict[str, str]:
 
 
 def _to_listing(path: str, facts: dict[str, str]) -> Listing | None:
-    if "Adress" not in facts:
-        return None
     parts = [p.strip() for p in facts["Adress"].split(",")]
     postcode = parts[1] if len(parts) >= 3 else ""
     if postcode and not postcode.replace(" ", "").startswith(VARBERG_POSTCODE_PREFIX):
@@ -61,12 +61,21 @@ def _to_listing(path: str, facts: dict[str, str]) -> Listing | None:
 
 def fetch(http) -> list[Listing]:
     listings = []
-    for path in _listing_paths(http.get_text(LIST_URL)):
+    paths = _listing_paths(http.get_text(LIST_URL))
+    parsed = 0
+    for path in paths:
         try:
-            listing = _to_listing(path, _facts(http.get_text(BASE + path)))
+            facts = _facts(http.get_text(BASE + path))
         except Exception as error:  # one broken listing must not hide the others
             log.warning("Derome: hoppar över %s: %s", path, error)
             continue
+        if "Adress" not in facts:
+            log.warning("Derome: hoppar över %s: saknar Adress", path)
+            continue
+        parsed += 1
+        listing = _to_listing(path, facts)
         if listing:
             listings.append(listing)
+    if paths and not parsed:
+        raise RuntimeError("Derome: ingen annonssida gick att läsa (saknar Adress) – har sidan bytt utseende?")
     return listings

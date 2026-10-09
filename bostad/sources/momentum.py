@@ -1,8 +1,11 @@
+import logging
+
 from bostad.model import Listing
 from bostad.parsing import parse_momentum_date, parse_rooms
 
 API_KEY = "pJnKrR6B3FzRNFsF33xL8LhSs55KPJrm"
 PAGE_SIZE = 500
+log = logging.getLogger(__name__)
 
 
 def _area_path(item) -> list[str]:
@@ -54,7 +57,11 @@ def fetch_momentum(http, *, source, base_url, app_instance, link_base, include=l
         item for item in _list_objects(http, base_url, headers)
         if item.get("queueType") == "residential" and include(item)
     ]
-    return [
-        _to_listing(source, link_base, http.get_json(f"{base_url}v2/market/objects/{item['id']}", headers))
-        for item in wanted
-    ]
+    listings = []
+    for item in wanted:
+        try:
+            detail = http.get_json(f"{base_url}v2/market/objects/{item['id']}", headers)
+            listings.append(_to_listing(source, link_base, detail))
+        except Exception as error:  # one broken listing must not hide the others
+            log.warning("%s: hoppar över %s: %s", source, item.get("id"), error)
+    return listings
