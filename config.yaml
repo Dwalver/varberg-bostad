@@ -1,0 +1,59 @@
+# Filter för bostadsbevakningen. Ändra här – ingen kod behöver röras.
+max_rent: 11000        # kr/mån, inkl. ev. avgifter
+min_rooms: 3
+ntfy_server: https://ntfy.sh
+
+# Orter och stadsdelar som räknas som "ditt område".
+allowed_areas:
+  - Varberg
+  - Veddige
+  - Trönninge
+  - Trönningenäs
+  - Derome
+  - Åskloster
+  # Stadsdelar i Varberg
+  - Centralt
+  - Centrum
+  - Centrum Norr
+  - Centrala Varberg
+  - Håsten
+  - Sörse
+  - Brunnsberg
+  - Apelviken
+  - Apelvikshöjd
+  - Breared
+  - Göingegården
+  - Lassabacka
+  - Hästhagen
+  - Kvarnakulle
+  - Marmorlyckan
+  - Träslöv
+  - Bläshammar
+  - Getakärr
+  - Sörsedammen
+
+# Orter i kommunen som INTE ska bevakas.
+# Väröbacka saknas med avsikt: postorten gäller både Bua och Åskloster -> "okänt område".
+excluded_areas:
+  - Bua
+  - Tvååker
+  - Träslövsläge
+  - Kungsäter
+  - Rolfstorp
+  - Himle
+  - Skällinge
+  - Grimeton
+  - Kärradal
+  - Tofta
+  - Valinge
+  - Lindberg
+  - Sibbarp
+  - Dagsås
+  - Nösslinge
+  - Spannarp
+  - Stamnared
+  - Gunnarsjö
+  - Karl Gustav
+  - Torpa
+  - Stråvalla
+  - Åkulla
