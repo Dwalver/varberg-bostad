@@ -1,0 +1,47 @@
+name: Bevaka lägenheter
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bevakning
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Sök efter nya lägenheter
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: python -m bostad.main
+
+      - name: Håll schemat vid liv (GitHub pausar efter 60 dagar utan commits)
+        run: |
+          last=$(git log -1 --format=%ct)
+          if [ $(( $(date +%s) - last )) -gt 2592000 ]; then date -u +%FT%TZ > state/heartbeat.txt; fi
+
+      - name: Spara tillstånd
+        run: |
+          git config user.name "bostadsbevakning[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state/
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Uppdatera sedda annonser"
+          git pull --rebase
+          git push
